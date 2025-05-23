@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'theme/app_colors.dart';
+// import 'home_screen.dart'; 
+import 'main_navigation_screen.dart'; 
+
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -19,11 +22,19 @@ class _AuthScreenState extends State<AuthScreen> {
 
   final _formKey = GlobalKey<FormState>();
 
-  void submit() {
-    if (_formKey.currentState!.validate()) {
-     
-    }
+ void submit() {
+  if (_formKey.currentState!.validate()) {
+    // Здесь ты можешь добавить свою логику входа/регистрации (через backend, firebase и т.д.)
+
+    // Переход на HomeScreen
+   Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+);
+
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

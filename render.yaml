@@ -2,9 +2,20 @@ services:
   - type: web
     name: qorgai-backend
     env: python
-    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn backend.app:app
+    startCommand: gunicorn app:app
     envVars:
-      - key: FLASK_ENV
-        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+
+  - type: static
+    name: qorgai-frontend
+    buildCommand: flutter build web --release
+    staticPublishPath: build/web
+    envVars:
+      - key: FLUTTER_VERSION
+        value: 3.19.0

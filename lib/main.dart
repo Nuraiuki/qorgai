@@ -12,7 +12,7 @@ void main() async {
         Locale('ru'),
         Locale('kk'),
       ],
-      path: 'assets/translations', // путь к JSON-файлам
+      path: 'assets/translations', 
       fallbackLocale: const Locale('ru'),
       saveLocale: true, 
       child: const QorgaiApp(),
@@ -27,7 +27,6 @@ class QorgaiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Qorgai',
-      debugShowCheckedModeBanner: false,
       locale: context.locale,
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,

@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'language_switcher.dart';
 import 'backcolor.dart';
 import 'auth_screen.dart'; 
+import 'crisis_map.dart'; 
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -86,6 +87,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     key: ValueKey("welcome_2_${context.locale.languageCode}"),
                   ),
                 ),
+               
+
               ],
             ),
           ),
@@ -97,6 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 Widget _buildInfoScreen() {
   return Padding(
     padding: const EdgeInsets.all(24),
+    
     child: Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [

@@ -56,7 +56,7 @@ class CustomInputField extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(
-              color: Color(0xFF6D9B6F), // красивый мягкий акцент
+              color: Color(0xFF6D9B6F), 
               width: 1.8,
             ),
           ),
