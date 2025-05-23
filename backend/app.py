@@ -145,6 +145,22 @@ Remember: help them feel safe, heard, and empowered — like a true queen standi
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/users', methods=['GET'])
+def get_users():
+    try:
+        users = User.query.all()
+        users_list = []
+        for user in users:
+            users_list.append({
+                'id': user.id,
+                'name': user.name,
+                'email': user.email,
+                'messages_count': Message.query.filter_by(user_id=user.id).count()
+            })
+        return jsonify(users_list)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Error handling
 @app.errorhandler(500)
 def handle_error(error):
