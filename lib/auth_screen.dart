@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'theme/app_colors.dart';
 // import 'home_screen.dart'; 
 import 'main_navigation_screen.dart'; 
@@ -14,6 +16,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
   bool obscurePassword = true;
+  bool isLoading = false;
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -22,19 +25,54 @@ class _AuthScreenState extends State<AuthScreen> {
 
   final _formKey = GlobalKey<FormState>();
 
- void submit() {
-  if (_formKey.currentState!.validate()) {
-    // Здесь ты можешь добавить свою логику входа/регистрации (через backend, firebase и т.д.)
+  Future<void> submit() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => isLoading = true);
+      
+      try {
+        final url = isLogin 
+            ? 'https://qorgai-backend.onrender.com/api/login'
+            : 'https://qorgai-backend.onrender.com/api/register';
+            
+        final response = await http.post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': emailController.text,
+            'password': passwordController.text,
+            if (!isLogin) 'name': nameController.text,
+            if (!isLogin) 'confirm_password': confirmPasswordController.text,
+          }),
+        );
 
-    // Переход на HomeScreen
-   Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-);
+        final data = jsonDecode(response.body);
 
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          // Успешный вход или регистрация
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+          );
+        } else {
+          // Ошибка
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(data['message'] ?? 'Произошла ошибка')),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ошибка подключения к серверу')),
+        );
+      } finally {
+        if (mounted) {
+          setState(() => isLoading = false);
+        }
+      }
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +149,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         const SizedBox(height: 24),
 
                         ElevatedButton(
-                          onPressed: submit,
+                          onPressed: isLoading ? null : submit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6D9B6F),
                             padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 13),
@@ -119,14 +157,16 @@ class _AuthScreenState extends State<AuthScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: Text(
-                            isLogin ? "Войти" : "Зарегистрироваться",
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
+                          child: isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                                  isLogin ? "Войти" : "Зарегистрироваться",
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                         const SizedBox(height: 14),
                         Text(

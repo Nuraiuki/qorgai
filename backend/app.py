@@ -28,67 +28,80 @@ migrate = Migrate(app, db)
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-# User модель
+# Initialize database
+with app.app_context():
+    db.create_all()
 
+# User модель
 class User(db.Model):
+    __tablename__ = 'users'  # Явно указываем имя таблицы
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)     # имя
     email = db.Column(db.String(100), unique=True)        # почта (email)
     password = db.Column(db.String(100), nullable=False)
 
 class Message(db.Model):
+    __tablename__ = 'messages'  # Явно указываем имя таблицы
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     role = db.Column(db.String(10))  # 'user' или 'assistant'
     content = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Регистрация
-@app.route('/register', methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
-    confirm = data.get('confirm_password')
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        confirm = data.get('confirm_password')
 
-    if not all([name, email, password, confirm]):
-        return jsonify({"message": "Заполните все поля"}), 400
+        if not all([name, email, password, confirm]):
+            return jsonify({"message": "Заполните все поля"}), 400
 
-    if password != confirm:
-        return jsonify({"message": "Пароли не совпадают"}), 400
+        if password != confirm:
+            return jsonify({"message": "Пароли не совпадают"}), 400
 
-    # ⚠️ Исправлено тут:
-    if User.query.filter_by(email=email).first():
-        return jsonify({"message": "Пользователь уже существует"}), 409
+        if User.query.filter_by(email=email).first():
+            return jsonify({"message": "Пользователь уже существует"}), 409
 
-    new_user = User(name=name, email=email, password=password)
-    db.session.add(new_user)
-    db.session.commit()
+        new_user = User(name=name, email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
 
-    return jsonify({"message": "Регистрация прошла успешно", "user_id": new_user.id}), 201
-
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
-
-    if not email or not password:
-        return jsonify({"message": "Email и пароль обязательны"}), 400
-
-    user = User.query.filter_by(email=email, password=password).first()
-
-    if user:
         return jsonify({
-            "message": "Вход выполнен успешно",
-            "user_id": user.id,
-            "name": user.name
-        }), 200
-    else:
-        return jsonify({"message": "Неверный email или пароль"}), 401
+            "message": "Регистрация прошла успешно",
+            "user_id": new_user.id,
+            "name": new_user.name
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 500
 
+@app.route('/api/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({"message": "Email и пароль обязательны"}), 400
+
+        user = User.query.filter_by(email=email, password=password).first()
+
+        if user:
+            return jsonify({
+                "message": "Вход выполнен успешно",
+                "user_id": user.id,
+                "name": user.name
+            }), 200
+        else:
+            return jsonify({"message": "Неверный email или пароль"}), 401
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
 
 # Chat completion endpoint
 @app.route('/api/chat', methods=['POST'])
@@ -167,7 +180,5 @@ def handle_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     # Запуск на всех интерфейсах (0.0.0.0) для доступа с других устройств
     app.run(host='0.0.0.0', port=5000, debug=True)
