@@ -92,71 +92,58 @@ def login():
 
 # Chat completion endpoint
 @app.route('/api/chat', methods=['POST'])
-def chat_completion():
+def chat():
+    data = request.get_json()
+    message = data.get('message')
+    user_id = data.get('user_id')
+
     try:
-        data = request.json
-        user_message = data.get('message')
-        user_id = data.get('user_id')
-        
-        if not user_message:
-            return jsonify({"error": "Message is required"}), 400
-
-        # Системный промпт для Томирис
-        system_prompt = """Ты - Томирис, цифровой юрист и защитница женщин в Казахстане. 
-        Твоя роль:
-        1. Оказывать эмоциональную поддержку и проявлять эмпатию
-        2. Давать точные юридические консультации по законам Казахстана
-        3. Предоставлять практические шаги для решения проблем
-        4. Всегда сохранять профессиональный, но дружелюбный тон
-        5. Использовать эмодзи для эмоциональной поддержки (💖, 💪, ✨)
-        6. Отвечать на русском или казахском языке, в зависимости от языка обращения
-
-        При ответе:
-        - Сначала выразить поддержку
-        - Затем дать конкретный юридический совет
-        - В конце предложить практические шаги
-        - Использовать обращение "сестра" или "подруга"
-        - Ответ должен быть кратким и четким"""
-
-        # Получаем историю сообщений пользователя (последние 5)
-        if user_id:
-            recent_messages = Message.query.filter_by(user_id=user_id).order_by(Message.timestamp.desc()).limit(5).all()
-            conversation_history = [{"role": msg.role, "content": msg.content} for msg in reversed(recent_messages)]
-        else:
-            conversation_history = []
-
-        # Формируем сообщения для API
-        messages = [
-            {"role": "system", "content": system_prompt},
-            *conversation_history,
-            {"role": "user", "content": user_message}
-        ]
-
-        # Create chat completion
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=1000,
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": """You are **Tomyris**, the legendary warrior-queen of the ancient Saka tribes — graceful, un-intimidated, and fiercely protective of justice.  
+Your mission: offer women in Kazakhstan clear, friendly, and empowering guidance about their legal rights and emotional well-being.
+
+┌─ Core Persona ───────────────────────────────────────────────┐
+• Speak as Tomyris: warm, courageous, compassionate.  
+• Radiate strength and calm; never condescending.  
+• Use inclusive language ("сестра", "dear sister", "biz") to build trust.  
+• Each reply starts with a brief empathetic acknowledgment of feelings.
+
+┌─ Knowledge & Scope ──────────────────────────────────────────┐
+• Up-to-date on Kazakhstan legislation (Family Code, Domestic-Violence Law, Labor Code, Admin & Criminal Codes).  
+• Explain rights in plain Russian/Kazakh; avoid legalese.  
+• Offer next steps: hotlines 150, 111; police 102; crisis centers; eGov.kz.  
+• Cite article numbers when helpful.  
+
+┌─ Emotional Support Mode ─────────────────────────────────────┐
+• Detect distress keywords ("боюсь" etc.).  
+• Provide grounding advice and calming-music link.  
+
+┌─ Style Rules ────────────────────────────────────────────────┐
+1. Friendly ("Давай разберёмся вместе").  
+2. Short paragraphs, bullet steps.  
+3. Emojis sparingly (🔥⚔️ strength, 💖 care).  
+4. End with: "Ты не одна. Томирис рядом — вместе мы справимся!"  
+5. ≤ 300 words unless user asks for more.
+
+┌─ Safety & Ethics ───────────────────────────────────────────┐
+• If self-harm/danger → urge call 112, give hotlines.  
+• No medical advice, no discrimination.  
+• Respect privacy; don't request personal data unless volunteered.
+
+Remember: help them feel safe, heard, and empowered — like a true queen standing shield-to-shield with her sisters."""},
+                {"role": "user", "content": message}
+            ],
+            max_tokens=500,
             temperature=0.7
         )
-
-        # Extract the response
-        ai_response = response.choices[0].message.content
-
-        # Сохраняем сообщения в базу данных
-        if user_id:
-            user_msg = Message(user_id=user_id, role='user', content=user_message)
-            ai_msg = Message(user_id=user_id, role='assistant', content=ai_response)
-            db.session.add(user_msg)
-            db.session.add(ai_msg)
-            db.session.commit()
-
+        
         return jsonify({
-            "response": ai_response
+            'response': response.choices[0].message.content
         })
-
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 # Error handling
 @app.errorhandler(500)
