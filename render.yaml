@@ -3,8 +3,10 @@ services:
     name: qorgai-backend
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: |
+      pip install -r requirements.txt
+      pip install gunicorn
+    startCommand: gunicorn backend.app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -12,3 +14,7 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: backend.app
