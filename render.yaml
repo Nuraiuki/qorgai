@@ -12,7 +12,7 @@ services:
       - key: DATABASE_URL
         sync: false
 
-  - type: static
+  - type: web
     name: qorgai-frontend
     buildCommand: flutter build web --release
     staticPublishPath: build/web
