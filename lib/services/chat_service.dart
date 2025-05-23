@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class ChatService {
   // Используем разные URL для разработки и продакшена
   final String baseUrl = kDebugMode 
-      ? 'http://192.168.1.132:5000'  // Локальный URL для разработки
+      ? 'http://localhost:5000'  // Локальный URL для разработки
       : 'https://qorgai-backend.onrender.com';  // URL на Render
 
   Future<String> sendMessage(String message, {int? userId}) async {
