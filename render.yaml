@@ -10,7 +10,7 @@ services:
     startCommand: gunicorn backend.app:app
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.11
       - key: OPENAI_API_KEY
         sync: false
       - key: DATABASE_URL
@@ -19,3 +19,15 @@ services:
         value: production
       - key: FLASK_APP
         value: backend.app
+      - key: FLUTTER_VERSION
+        value: 3.19.0
+
+  - type: web
+    name: qorgai-frontend
+    env: static
+    buildCommand: |
+      flutter build web --release
+    staticPublishPath: build/web
+    envVars:
+      - key: FLUTTER_VERSION
+        value: 3.19.0
