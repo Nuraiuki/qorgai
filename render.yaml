@@ -12,10 +12,3 @@ services:
       - key: DATABASE_URL
         sync: false
 
-  - type: web
-    name: qorgai-frontend
-    buildCommand: flutter build web --release
-    staticPublishPath: build/web
-    envVars:
-      - key: FLUTTER_VERSION
-        value: 3.19.0
