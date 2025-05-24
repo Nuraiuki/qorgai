@@ -9,9 +9,14 @@ from datetime import datetime
 from functools import wraps
 import re
 from sqlalchemy import text
+import logging
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 # Настройка CORS для разрешения всех источников
@@ -73,7 +78,7 @@ class User(db.Model):
     __tablename__ = 'users'  # Явно указываем имя таблицы
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)     # имя
-    email = db.Column(db.String(100), unique=True)        # почта (email)
+    email = db.Column(db.String(120), unique=True, nullable=False)        # почта (email)
     password = db.Column(db.String(100), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)      # флаг администратора
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -87,18 +92,18 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Health check endpoint
-@app.route('/api/health', methods=['GET'])
+@app.route('/')
 def health_check():
     try:
-        # Check database connection
+        # Test database connection
         db.session.execute(text('SELECT 1'))
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
             'timestamp': datetime.utcnow().isoformat()
-        }), 200
+        })
     except Exception as e:
-        app.logger.error(f"Health check failed: {str(e)}")
+        logger.error(f"Health check failed: {str(e)}")
         return jsonify({
             'status': 'unhealthy',
             'error': str(e),
