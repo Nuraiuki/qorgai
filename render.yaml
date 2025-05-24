@@ -3,10 +3,8 @@ services:
     name: qorgai-backend
     env: python
     buildCommand: |
-      pip install --upgrade pip
-      pip install -r backend/requirements.txt
-      pip install psycopg2-binary
-      cd backend && flask db upgrade
+      chmod +x backend/build.sh
+      ./backend/build.sh
     startCommand: gunicorn backend.app:app
     envVars:
       - key: PYTHON_VERSION

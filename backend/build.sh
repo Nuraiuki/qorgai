@@ -1,15 +1,16 @@
-#!/usr/bin/env bash
-# exit on error
-set -o errexit
+#!/bin/bash
+set -e
 
-# Install system dependencies
-apt-get update
-apt-get install -y postgresql-client libpq-dev
-
-# Install Python dependencies
+# Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install psycopg2-binary
 
+# Set environment variables
+export FLASK_APP=app
+export FLASK_ENV=production
+
 # Run database migrations
-flask db upgrade 
+flask db upgrade
+
+echo "Build completed successfully" 
