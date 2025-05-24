@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'screens/chat_screen.dart';
+import 'favorites_screen.dart';
 import 'screens/article_screen.dart';
 import 'screens/podcast_screen.dart';
 import 'screens/profile_screen.dart';
 import 'theme/app_colors.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final int? userId;
+  
+  const MainNavigationScreen({super.key, this.userId});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -15,12 +17,18 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const ChatScreen(),
-    const ArticleScreen(),
-    const PodcastScreen(),
-    const ProfileScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      TomirisHomeScreen(userId: widget.userId),
+      const ArticleScreen(),
+      const PodcastScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,49 +44,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: AppColors.primaryGreen,
-            unselectedItemColor: Colors.grey,
-            selectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF6D9B6F),
+          unselectedItemColor: Colors.grey,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              activeIcon: Icon(Icons.chat_bubble),
+              label: 'Чат',
             ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 12,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.article_outlined),
+              activeIcon: Icon(Icons.article),
+              label: 'Статьи',
             ),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_outline),
-                activeIcon: Icon(Icons.chat_bubble),
-                label: 'Чат',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.article_outlined),
-                activeIcon: Icon(Icons.article),
-                label: 'Статьи',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.headphones_outlined),
-                activeIcon: Icon(Icons.headphones),
-                label: 'Подкасты',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'Профиль',
-              ),
-            ],
-          ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.headphones_outlined),
+              activeIcon: Icon(Icons.headphones),
+              label: 'Подкасты',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Профиль',
+            ),
+          ],
         ),
       ),
     );

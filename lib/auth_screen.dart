@@ -176,7 +176,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         Navigator.of(context).pop();
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                          MaterialPageRoute(builder: (context) => MainNavigationScreen(userId: data['user_id'])),
                         );
                       },
                       child: const Text('Согласен'),
@@ -194,7 +194,7 @@ class _AuthScreenState extends State<AuthScreen> {
               );
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                MaterialPageRoute(builder: (context) => MainNavigationScreen(userId: data['user_id'])),
               );
             }
           }
