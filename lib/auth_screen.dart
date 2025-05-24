@@ -113,101 +113,128 @@ class _AuthScreenState extends State<AuthScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Origin': 'https://qorgai-frontend-0odv.onrender.com',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: jsonEncode(requestBody),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw TimeoutException('Превышено время ожидания ответа от сервера');
+        },
       );
 
       debugPrint('Статус ответа: ${response.statusCode}'); // Логирование
+      debugPrint('Заголовки ответа: ${response.headers}'); // Логирование
       debugPrint('Тело ответа: ${response.body}'); // Логирование
 
-      final data = jsonDecode(response.body);
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('Успешный ответ: $data'); // Логирование
+        try {
+          final data = jsonDecode(response.body);
+          debugPrint('Успешный ответ: $data'); // Логирование
 
-        // Сохраняем данные пользователя
-        final userData = {
-          'id': data['user_id'],
-          'name': data['name'],
-          'email': data['email'],
-          'is_admin': data['is_admin'] ?? false,
-        };
+          // Сохраняем данные пользователя
+          final userData = {
+            'id': data['user_id'],
+            'name': data['name'],
+            'email': data['email'],
+            'is_admin': data['is_admin'] ?? false,
+          };
 
-        debugPrint('Сохранение данных пользователя: $userData'); // Логирование
+          debugPrint('Сохранение данных пользователя: $userData'); // Логирование
 
-        final storage = await SharedPreferences.getInstance();
-        await storage.setString('user', jsonEncode(userData));
+          final storage = await SharedPreferences.getInstance();
+          await storage.setString('user', jsonEncode(userData));
 
-        if (mounted) {
-          if (!isLogin) {
-            debugPrint('Показ диалога соглашения'); // Логирование
-            // Показываем диалог с соглашением только после регистрации
-            await showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('Соглашение'),
-                  content: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Данное приложение носит исключительно информационный характер и не является частью какого-либо движения или организации.',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Нажимая кнопку «Согласен», пользователь подтверждает, что осознаёт ответственность за распространение информации и принимает условия, согласно которым:',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        SizedBox(height: 8),
-                        Text('– он не будет разглашать данные о третьих лицах без их согласия,'),
-                        Text('– обязуется соблюдать положения Закона РК «О персональных данных»,'),
-                        Text('– использует полученную информацию исключительно в личных целях,'),
-                        Text('– и принимает условия использования контента в рамках закона.'),
-                      ],
+          if (mounted) {
+            if (!isLogin) {
+              debugPrint('Показ диалога соглашения'); // Логирование
+              // Показываем диалог с соглашением только после регистрации
+              await showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Соглашение'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Данное приложение носит исключительно информационный характер и не является частью какого-либо движения или организации.',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Нажимая кнопку «Согласен», пользователь подтверждает, что осознаёт ответственность за распространение информации и принимает условия, согласно которым:',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          SizedBox(height: 8),
+                          Text('– он не будет разглашать данные о третьих лицах без их согласия,'),
+                          Text('– обязуется соблюдать положения Закона РК «О персональных данных»,'),
+                          Text('– использует полученную информацию исключительно в личных целях,'),
+                          Text('– и принимает условия использования контента в рамках закона.'),
+                        ],
+                      ),
                     ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        debugPrint('Пользователь согласился с условиями'); // Логирование
-                        Navigator.of(context).pop();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-                        );
-                      },
-                      child: const Text('Согласен'),
-                    ),
-                  ],
-                );
-              },
-            );
-          } else {
-            debugPrint('Успешный вход, переход на главный экран'); // Логирование
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(data['message']),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-            );
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          debugPrint('Пользователь согласился с условиями'); // Логирование
+                          Navigator.of(context).pop();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                          );
+                        },
+                        child: const Text('Согласен'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            } else {
+              debugPrint('Успешный вход, переход на главный экран'); // Логирование
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(data['message']),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+              );
+            }
           }
+        } catch (e) {
+          debugPrint('Ошибка при обработке ответа: $e'); // Логирование
+          setState(() {
+            errorMessage = 'Ошибка при обработке ответа сервера';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ошибка при обработке ответа сервера'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } else {
-        debugPrint('Ошибка: ${data['message']}'); // Логирование
-        setState(() {
+        String errorMessage;
+        try {
+          final data = jsonDecode(response.body);
           errorMessage = data['message'] ?? 'Произошла ошибка';
+        } catch (e) {
+          errorMessage = 'Ошибка сервера: ${response.statusCode}';
+        }
+        debugPrint('Ошибка: $errorMessage'); // Логирование
+        setState(() {
+          this.errorMessage = errorMessage;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage!),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );
@@ -215,11 +242,13 @@ class _AuthScreenState extends State<AuthScreen> {
     } catch (e) {
       debugPrint('Ошибка при отправке запроса: $e'); // Логирование
       setState(() {
-        errorMessage = 'Ошибка соединения с сервером';
+        errorMessage = e is TimeoutException 
+            ? 'Превышено время ожидания ответа от сервера'
+            : 'Ошибка соединения с сервером';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ошибка соединения с сервером'),
+        SnackBar(
+          content: Text(errorMessage!),
           backgroundColor: Colors.red,
         ),
       );

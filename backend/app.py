@@ -19,14 +19,30 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# Настройка CORS для разрешения всех источников
+
+# Enhanced CORS configuration
 CORS(app, resources={
     r"/*": {
-        "origins": "*",
+        "origins": ["https://qorgai-frontend-0odv.onrender.com", "http://localhost:3000", "http://localhost:8080"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
+        "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+        "expose_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True,
+        "max_age": 3600
     }
 })
+
+@app.after_request
+def after_request(response):
+    # Add CORS headers to every response
+    response.headers.add('Access-Control-Allow-Origin', 'https://qorgai-frontend-0odv.onrender.com')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,Origin,X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    
+    logger.info(f"Request headers: {dict(request.headers)}")
+    logger.info(f"Response headers: {dict(response.headers)}")
+    return response
 
 # Handle database URL format
 database_url = os.getenv('DATABASE_URL')
