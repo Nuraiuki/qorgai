@@ -91,10 +91,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       final url = Uri.parse(
-        '${isLogin ? 'http://localhost:5001/api/login' : 'http://localhost:5001/api/register'}'
+        '${isLogin ? 'https://qorgai-backend.onrender.com/api/login' : 'https://qorgai-backend.onrender.com/api/register'}'
       );
 
-      print('Отправка запроса на: $url'); // Логирование URL
+      print('Отправка запроса на: $url'); // Логирование
 
       final requestBody = {
         'email': emailController.text.trim(),
@@ -105,16 +105,19 @@ class _AuthScreenState extends State<AuthScreen> {
         },
       };
 
-      print('Тело запроса: $requestBody'); // Логирование тела запроса
+      print('Тело запроса: $requestBody'); // Логирование
 
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: jsonEncode(requestBody),
       );
 
-      print('Статус ответа: ${response.statusCode}'); // Логирование статуса
-      print('Тело ответа: ${response.body}'); // Логирование ответа
+      print('Статус ответа: ${response.statusCode}'); // Логирование
+      print('Тело ответа: ${response.body}'); // Логирование
 
       final data = jsonDecode(response.body);
 
@@ -201,7 +204,7 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       }
     } catch (e) {
-      print('Ошибка при отправке запроса: $e'); // Логирование ошибок
+      print('Ошибка при отправке запроса: $e'); // Логирование
       setState(() {
         errorMessage = 'Ошибка соединения с сервером';
       });
