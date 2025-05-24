@@ -145,27 +145,31 @@ def register():
             app.logger.warning(f"User already exists: {email}")  # Логирование существующего пользователя
             return jsonify({"message": "Пользователь с таким email уже существует"}), 409
 
-        # Создаем нового пользователя
-        new_user = User(
-            name=name,
-            email=email,
-            password=password,  # В реальном приложении пароль должен быть хэширован
-            is_admin=False,
-            created_at=datetime.utcnow()
-        )
-        
-        db.session.add(new_user)
-        db.session.commit()
-        app.logger.info(f"User registered successfully: {email}")  # Логирование успешной регистрации
+        try:
+            # Создаем нового пользователя
+            new_user = User(
+                name=name,
+                email=email,
+                password=password,  # В реальном приложении пароль должен быть хэширован
+                is_admin=False,
+                created_at=datetime.utcnow()
+            )
+            
+            db.session.add(new_user)
+            db.session.commit()
+            app.logger.info(f"User registered successfully: {email}")  # Логирование успешной регистрации
 
-        return jsonify({
-            "message": "Регистрация прошла успешно",
-            "user_id": new_user.id,
-            "name": new_user.name,
-            "email": new_user.email
-        }), 201
+            return jsonify({
+                "message": "Регистрация прошла успешно",
+                "user_id": new_user.id,
+                "name": new_user.name,
+                "email": new_user.email
+            }), 201
+        except Exception as db_error:
+            db.session.rollback()
+            app.logger.error(f"Database error during registration: {str(db_error)}")
+            return jsonify({"message": "Ошибка при сохранении данных"}), 500
     except Exception as e:
-        db.session.rollback()
         app.logger.error(f"Error in register: {str(e)}")  # Логирование ошибки
         return jsonify({"message": "Внутренняя ошибка сервера"}), 500
 
