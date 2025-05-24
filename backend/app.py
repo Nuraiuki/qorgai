@@ -28,6 +28,7 @@ database_url = os.getenv('DATABASE_URL', 'sqlite:///qorgai.db')
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
+app.logger.info(f"Using database URL: {database_url}")  # Log the database URL (without credentials)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['ADMIN_USERNAME'] = os.getenv('ADMIN_USERNAME', 'admin')
@@ -51,7 +52,11 @@ else:
 
 # Initialize database
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        app.logger.info("Database tables created successfully")
+    except Exception as e:
+        app.logger.error(f"Error creating database tables: {str(e)}")
 
 def admin_required(f):
     @wraps(f)
