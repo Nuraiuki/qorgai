@@ -25,7 +25,7 @@ CORS(app, resources={
     r"/*": {
         "origins": ["https://qorgai-frontend-0odv.onrender.com", "http://localhost:3000", "http://localhost:8080"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+        "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With", "Access-Control-Request-Method", "Access-Control-Request-Headers"],
         "expose_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True,
         "max_age": 3600
@@ -35,13 +35,29 @@ CORS(app, resources={
 @app.after_request
 def after_request(response):
     # Add CORS headers to every response
-    response.headers.add('Access-Control-Allow-Origin', 'https://qorgai-frontend-0odv.onrender.com')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,Origin,X-Requested-With')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    origin = request.headers.get('Origin')
+    if origin in ["https://qorgai-frontend-0odv.onrender.com", "http://localhost:3000", "http://localhost:8080"]:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,Origin,X-Requested-With,Access-Control-Request-Method,Access-Control-Request-Headers')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '3600')
     
     logger.info(f"Request headers: {dict(request.headers)}")
     logger.info(f"Response headers: {dict(response.headers)}")
+    return response
+
+# Add OPTIONS handler for preflight requests
+@app.route('/api/chat', methods=['OPTIONS'])
+def handle_chat_options():
+    response = jsonify({'status': 'ok'})
+    origin = request.headers.get('Origin')
+    if origin in ["https://qorgai-frontend-0odv.onrender.com", "http://localhost:3000", "http://localhost:8080"]:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,Origin,X-Requested-With,Access-Control-Request-Method,Access-Control-Request-Headers')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '3600')
     return response
 
 # Handle database URL format
