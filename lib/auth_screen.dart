@@ -53,6 +53,9 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!value.contains(RegExp(r'[0-9]'))) {
       return 'Пароль должен содержать хотя бы одну цифру';
     }
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Пароль должен содержать хотя бы один специальный символ';
+    }
     return null;
   }
 
@@ -64,11 +67,22 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!isLogin && value != null && value.length < 2) {
       return 'Имя должно быть не менее 2 символов';
     }
+    if (!isLogin && value != null && !RegExp(r'^[а-яА-Яa-zA-Z\s-]+$').hasMatch(value)) {
+      return 'Имя может содержать только буквы, пробелы и дефис';
+    }
     return null;
   }
 
   Future<void> submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Пожалуйста, исправьте ошибки в форме'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       isLoading = true;
@@ -80,18 +94,27 @@ class _AuthScreenState extends State<AuthScreen> {
         '${isLogin ? 'http://localhost:5001/api/login' : 'http://localhost:5001/api/register'}'
       );
 
+      print('Отправка запроса на: $url'); // Логирование URL
+
+      final requestBody = {
+        'email': emailController.text.trim(),
+        'password': passwordController.text,
+        if (!isLogin) ...{
+          'name': nameController.text.trim(),
+          'confirm_password': confirmPasswordController.text,
+        },
+      };
+
+      print('Тело запроса: $requestBody'); // Логирование тела запроса
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': emailController.text.trim(),
-          'password': passwordController.text,
-          if (!isLogin) ...{
-            'name': nameController.text.trim(),
-            'confirm_password': confirmPasswordController.text,
-          },
-        }),
+        body: jsonEncode(requestBody),
       );
+
+      print('Статус ответа: ${response.statusCode}'); // Логирование статуса
+      print('Тело ответа: ${response.body}'); // Логирование ответа
 
       final data = jsonDecode(response.body);
 
@@ -104,8 +127,6 @@ class _AuthScreenState extends State<AuthScreen> {
           'is_admin': data['is_admin'] ?? false,
         };
 
-        // В реальном приложении здесь нужно сохранить токен
-        // await storage.write(key: 'token', value: data['token']);
         final storage = await SharedPreferences.getInstance();
         await storage.setString('user', jsonEncode(userData));
 
@@ -156,7 +177,6 @@ class _AuthScreenState extends State<AuthScreen> {
               },
             );
           } else {
-            // Для входа просто показываем сообщение об успехе
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(data['message']),
@@ -173,11 +193,24 @@ class _AuthScreenState extends State<AuthScreen> {
         setState(() {
           errorMessage = data['message'] ?? 'Произошла ошибка';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
+      print('Ошибка при отправке запроса: $e'); // Логирование ошибок
       setState(() {
         errorMessage = 'Ошибка соединения с сервером';
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ошибка соединения с сервером'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
