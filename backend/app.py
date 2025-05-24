@@ -267,7 +267,6 @@ def chat():
 
     data = request.get_json()
     message = data.get('message')
-    user_id = data.get('user_id')
 
     try:
         response = client.chat.completions.create(

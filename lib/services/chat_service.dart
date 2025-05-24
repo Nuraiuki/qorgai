@@ -6,12 +6,11 @@ class ChatService {
   static const String _baseUrl = 'https://qorgai-backend-0odv.onrender.com/api';
   static const String _chatEndpoint = '/chat';
 
-  Future<String> sendMessage(String message, int userId) async {
+  Future<String> sendMessage(String message) async {
     try {
       print('Sending message to backend...');
       print('URL: $_baseUrl$_chatEndpoint');
       print('Message: $message');
-      print('User ID: $userId');
 
       final response = await http.post(
         Uri.parse('$_baseUrl$_chatEndpoint'),
@@ -22,7 +21,6 @@ class ChatService {
         },
         body: jsonEncode({
           'message': message,
-          'user_id': userId,
         }),
       );
 
