@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class ChatService {
   static const String baseUrl = 'https://qorgai-backend-0odv.onrender.com';
 
-  Future<String> sendMessage(String message, int userId) async {
+  Future<String> sendMessage(String message, {required int? userId}) async {
     try {
       debugPrint('Sending message to: $baseUrl/api/chat');
       debugPrint('Message: $message');
