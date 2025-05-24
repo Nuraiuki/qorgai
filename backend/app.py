@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import openai
 from datetime import datetime
+from functools import wraps
 
 # Load environment variables
 load_dotenv()
@@ -22,6 +23,9 @@ CORS(app, resources={
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///qorgai.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['ADMIN_USERNAME'] = os.getenv('ADMIN_USERNAME', 'admin')
+app.config['ADMIN_PASSWORD'] = os.getenv('ADMIN_PASSWORD', 'admin123')
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -32,6 +36,16 @@ client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 with app.app_context():
     db.create_all()
 
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not (auth.username == app.config['ADMIN_USERNAME'] and 
+                          auth.password == app.config['ADMIN_PASSWORD']):
+            return jsonify({'message': 'Требуется авторизация администратора'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
 # User модель
 class User(db.Model):
     __tablename__ = 'users'  # Явно указываем имя таблицы
@@ -39,6 +53,8 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)     # имя
     email = db.Column(db.String(100), unique=True)        # почта (email)
     password = db.Column(db.String(100), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)      # флаг администратора
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Message(db.Model):
     __tablename__ = 'messages'  # Явно указываем имя таблицы
@@ -159,6 +175,7 @@ Remember: help them feel safe, heard, and empowered — like a true queen standi
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/users', methods=['GET'])
+@admin_required
 def get_users():
     try:
         users = User.query.all()
@@ -168,17 +185,39 @@ def get_users():
                 'id': user.id,
                 'name': user.name,
                 'email': user.email,
+                'is_admin': user.is_admin,
+                'created_at': user.created_at.isoformat(),
                 'messages_count': Message.query.filter_by(user_id=user.id).count()
             })
-        return jsonify(users_list)
+        return jsonify({
+            'status': 'success',
+            'data': users_list,
+            'total': len(users_list)
+        })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Error in get_users: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Ошибка при получении списка пользователей',
+            'error': str(e)
+        }), 500
 
 # Error handling
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({
+        'status': 'error',
+        'message': 'Запрашиваемый ресурс не найден'
+    }), 404
+
 @app.errorhandler(500)
 def handle_error(error):
-    return jsonify({"error": "Internal server error"}), 500
+    app.logger.error(f"Server error: {str(error)}")
+    return jsonify({
+        'status': 'error',
+        'message': 'Внутренняя ошибка сервера'
+    }), 500
 
 if __name__ == '__main__':
     # Запуск на всех интерфейсах (0.0.0.0) для доступа с других устройств
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
