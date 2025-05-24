@@ -31,8 +31,8 @@ CORS(app, resources={
 # Handle database URL format
 database_url = os.getenv('DATABASE_URL')
 if not database_url:
-    logger.warning("DATABASE_URL not set, using SQLite as fallback")
-    database_url = 'sqlite:///qorgai.db'
+    logger.warning("DATABASE_URL not set, using default PostgreSQL connection")
+    database_url = 'postgresql://qorgai_user:JvR1flhzpZnlo7Vdv5E0sTKObTXGH33H@dpg-d0okra0dl3ps73a3ci10-a.virginia-postgres.render.com/qorgai'
 elif database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
