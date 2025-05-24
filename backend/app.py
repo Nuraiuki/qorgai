@@ -29,11 +29,14 @@ CORS(app, resources={
 })
 
 # Handle database URL format
-database_url = os.getenv('DATABASE_URL', 'sqlite:///qorgai.db')
-if database_url.startswith('postgres://'):
+database_url = os.getenv('DATABASE_URL')
+if not database_url:
+    logger.warning("DATABASE_URL not set, using SQLite as fallback")
+    database_url = 'sqlite:///qorgai.db'
+elif database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-app.logger.info(f"Using database URL: {database_url}")  # Log the database URL (without credentials)
+logger.info(f"Using database URL: {database_url}")  # Log the database URL (without credentials)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['ADMIN_USERNAME'] = os.getenv('ADMIN_USERNAME', 'admin')
@@ -49,19 +52,19 @@ if openai_api_key:
         openai.api_key = openai_api_key
         client = openai
     except Exception as e:
-        app.logger.error(f"Failed to initialize OpenAI client: {str(e)}")
+        logger.error(f"Failed to initialize OpenAI client: {str(e)}")
         client = None
 else:
-    app.logger.warning("OpenAI API key not found. Chat functionality will be disabled.")
+    logger.warning("OpenAI API key not found. Chat functionality will be disabled.")
     client = None
 
 # Initialize database
 with app.app_context():
     try:
         db.create_all()
-        app.logger.info("Database tables created successfully")
+        logger.info("Database tables created successfully")
     except Exception as e:
-        app.logger.error(f"Error creating database tables: {str(e)}")
+        logger.error(f"Error creating database tables: {str(e)}")
 
 def admin_required(f):
     @wraps(f)
@@ -115,13 +118,13 @@ def health_check():
 def register():
     try:
         data = request.get_json()
-        app.logger.info(f"Register request received: {data}")  # Логирование входящего запроса
+        logger.info(f"Register request received: {data}")  # Логирование входящего запроса
         
         # Проверяем наличие всех необходимых полей
         required_fields = ['name', 'email', 'password', 'confirm_password']
         for field in required_fields:
             if not data.get(field):
-                app.logger.warning(f"Missing required field: {field}")  # Логирование отсутствующего поля
+                logger.warning(f"Missing required field: {field}")  # Логирование отсутствующего поля
                 return jsonify({"message": f"Поле {field} обязательно"}), 400
 
         name = data.get('name').strip()
@@ -132,27 +135,27 @@ def register():
         # Валидация email
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):
-            app.logger.warning(f"Invalid email format: {email}")  # Логирование неверного формата email
+            logger.warning(f"Invalid email format: {email}")  # Логирование неверного формата email
             return jsonify({"message": "Некорректный формат email"}), 400
 
         # Валидация пароля
         if len(password) < 6:
-            app.logger.warning("Password too short")  # Логирование короткого пароля
+            logger.warning("Password too short")  # Логирование короткого пароля
             return jsonify({"message": "Пароль должен быть не менее 6 символов"}), 400
         if not any(c.isupper() for c in password):
-            app.logger.warning("Password missing uppercase")  # Логирование отсутствия заглавной буквы
+            logger.warning("Password missing uppercase")  # Логирование отсутствия заглавной буквы
             return jsonify({"message": "Пароль должен содержать хотя бы одну заглавную букву"}), 400
         if not any(c.isdigit() for c in password):
-            app.logger.warning("Password missing digit")  # Логирование отсутствия цифры
+            logger.warning("Password missing digit")  # Логирование отсутствия цифры
             return jsonify({"message": "Пароль должен содержать хотя бы одну цифру"}), 400
 
         if password != confirm:
-            app.logger.warning("Passwords do not match")  # Логирование несовпадения паролей
+            logger.warning("Passwords do not match")  # Логирование несовпадения паролей
             return jsonify({"message": "Пароли не совпадают"}), 400
 
         # Проверяем, существует ли пользователь
         if User.query.filter_by(email=email).first():
-            app.logger.warning(f"User already exists: {email}")  # Логирование существующего пользователя
+            logger.warning(f"User already exists: {email}")  # Логирование существующего пользователя
             return jsonify({"message": "Пользователь с таким email уже существует"}), 409
 
         try:
@@ -167,7 +170,7 @@ def register():
             
             db.session.add(new_user)
             db.session.commit()
-            app.logger.info(f"User registered successfully: {email}")  # Логирование успешной регистрации
+            logger.info(f"User registered successfully: {email}")  # Логирование успешной регистрации
 
             return jsonify({
                 "message": "Регистрация прошла успешно",
@@ -177,21 +180,21 @@ def register():
             }), 201
         except Exception as db_error:
             db.session.rollback()
-            app.logger.error(f"Database error during registration: {str(db_error)}")
+            logger.error(f"Database error during registration: {str(db_error)}")
             return jsonify({"message": "Ошибка при сохранении данных"}), 500
     except Exception as e:
-        app.logger.error(f"Error in register: {str(e)}")  # Логирование ошибки
+        logger.error(f"Error in register: {str(e)}")  # Логирование ошибки
         return jsonify({"message": "Внутренняя ошибка сервера"}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
         data = request.get_json()
-        app.logger.info(f"Login request received: {data.get('email')}")  # Логирование входящего запроса
+        logger.info(f"Login request received: {data.get('email')}")  # Логирование входящего запроса
         
         # Проверяем наличие необходимых полей
         if not data.get('email') or not data.get('password'):
-            app.logger.warning("Missing email or password")  # Логирование отсутствующих полей
+            logger.warning("Missing email or password")  # Логирование отсутствующих полей
             return jsonify({"message": "Email и пароль обязательны"}), 400
 
         email = data.get('email').strip().lower()
@@ -201,14 +204,14 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if not user:
-            app.logger.warning(f"User not found: {email}")  # Логирование отсутствующего пользователя
+            logger.warning(f"User not found: {email}")  # Логирование отсутствующего пользователя
             return jsonify({"message": "Пользователь не найден"}), 404
 
         if user.password != password:  # В реальном приложении нужно сравнивать хэши
-            app.logger.warning(f"Invalid password for user: {email}")  # Логирование неверного пароля
+            logger.warning(f"Invalid password for user: {email}")  # Логирование неверного пароля
             return jsonify({"message": "Неверный пароль"}), 401
 
-        app.logger.info(f"User logged in successfully: {email}")  # Логирование успешного входа
+        logger.info(f"User logged in successfully: {email}")  # Логирование успешного входа
         return jsonify({
             "message": "Вход выполнен успешно",
             "user_id": user.id,
@@ -217,7 +220,7 @@ def login():
             "is_admin": user.is_admin
         }), 200
     except Exception as e:
-        app.logger.error(f"Error in login: {str(e)}")  # Логирование ошибки
+        logger.error(f"Error in login: {str(e)}")  # Логирование ошибки
         return jsonify({"message": "Внутренняя ошибка сервера"}), 500
 
 # Chat completion endpoint
@@ -278,7 +281,7 @@ Remember: help them feel safe, heard, and empowered — like a true queen standi
             'response': response.choices[0].message.content
         })
     except Exception as e:
-        app.logger.error(f"Error in chat: {str(e)}")
+        logger.error(f"Error in chat: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/users', methods=['GET'])
@@ -302,7 +305,7 @@ def get_users():
             'total': len(users_list)
         })
     except Exception as e:
-        app.logger.error(f"Error in get_users: {str(e)}")
+        logger.error(f"Error in get_users: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': 'Ошибка при получении списка пользователей',
@@ -319,7 +322,7 @@ def not_found_error(error):
 
 @app.errorhandler(500)
 def handle_error(error):
-    app.logger.error(f"Server error: {str(error)}")
+    logger.error(f"Server error: {str(error)}")
     return jsonify({
         'status': 'error',
         'message': 'Внутренняя ошибка сервера'
