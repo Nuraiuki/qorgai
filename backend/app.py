@@ -35,10 +35,8 @@ migrate = Migrate(app, db)
 openai_api_key = os.getenv('OPENAI_API_KEY')
 if openai_api_key:
     try:
-        client = openai.OpenAI(
-            api_key=openai_api_key,
-            base_url="https://api.openai.com/v1"
-        )
+        openai.api_key = openai_api_key
+        client = openai
     except Exception as e:
         app.logger.error(f"Failed to initialize OpenAI client: {str(e)}")
         client = None
@@ -216,7 +214,7 @@ def chat():
     user_id = data.get('user_id')
 
     try:
-        response = client.chat.completions.create(
+        response = client.ChatCompletion.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": """You are **Tomyris**, the legendary warrior-queen of the ancient Saka tribes — graceful, un-intimidated, and fiercely protective of justice.  
