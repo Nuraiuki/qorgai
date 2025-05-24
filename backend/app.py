@@ -32,7 +32,12 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # Initialize OpenAI client
-client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+openai_api_key = os.getenv('OPENAI_API_KEY')
+if openai_api_key:
+    client = openai.OpenAI(api_key=openai_api_key)
+else:
+    app.logger.warning("OpenAI API key not found. Chat functionality will be disabled.")
+    client = None
 
 # Initialize database
 with app.app_context():
@@ -194,6 +199,11 @@ def login():
 # Chat completion endpoint
 @app.route('/api/chat', methods=['POST'])
 def chat():
+    if not client:
+        return jsonify({
+            'error': 'Chat functionality is not available. OpenAI API key is not configured.'
+        }), 503
+
     data = request.get_json()
     message = data.get('message')
     user_id = data.get('user_id')
@@ -244,6 +254,7 @@ Remember: help them feel safe, heard, and empowered — like a true queen standi
             'response': response.choices[0].message.content
         })
     except Exception as e:
+        app.logger.error(f"Error in chat: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/users', methods=['GET'])
