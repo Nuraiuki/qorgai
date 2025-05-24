@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
-import 'favorites_screen.dart';
-import 'edu.dart';
+import 'screens/chat_screen.dart';
+import 'screens/article_screen.dart';
+import 'screens/podcast_screen.dart';
+import 'screens/profile_screen.dart';
+import 'theme/app_colors.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -13,93 +15,71 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages =  [
-    HomeScreen(),
-    TomirisHomeScreen(),
-    EduScreen(),
+  final List<Widget> _screens = [
+    const ChatScreen(),
+    const ArticleScreen(),
+    const PodcastScreen(),
+    const ProfileScreen(),
   ];
-
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7F7),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFDEBEB),
-            borderRadius: BorderRadius.circular(40),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavIcon(
-                iconAsset: "assets/icons/icon_home.png",
-                index: 0,
-                isSelected: _selectedIndex == 0,
-                onTap: _onItemTapped,
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: AppColors.primaryGreen,
+            unselectedItemColor: Colors.grey,
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 12,
+            ),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.chat_bubble_outline),
+                activeIcon: Icon(Icons.chat_bubble),
+                label: 'Чат',
               ),
-              _NavIcon(
-                iconData: Icons.favorite_border, // ← Flutter-иконка
-                index: 1,
-                isSelected: _selectedIndex == 1,
-                onTap: _onItemTapped,
+              BottomNavigationBarItem(
+                icon: Icon(Icons.article_outlined),
+                activeIcon: Icon(Icons.article),
+                label: 'Статьи',
               ),
-              _NavIcon(
-                iconAsset: "assets/icons/icon_study.png",
-                index: 2,
-                isSelected: _selectedIndex == 2,
-                onTap: _onItemTapped,
+              BottomNavigationBarItem(
+                icon: Icon(Icons.headphones_outlined),
+                activeIcon: Icon(Icons.headphones),
+                label: 'Подкасты',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Профиль',
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _NavIcon extends StatelessWidget {
-  final String? iconAsset;
-  final IconData? iconData;
-  final int index;
-  final bool isSelected;
-  final Function(int) onTap;
-
-  const _NavIcon({
-    this.iconAsset,
-    this.iconData,
-    required this.index,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isSelected ? const Color(0xFFD25959) : Colors.grey;
-
-    return GestureDetector(
-      onTap: () => onTap(index),
-      child: Opacity(
-        opacity: isSelected ? 1.0 : 0.4,
-        child: iconAsset != null
-            ? Image.asset(
-                iconAsset!,
-                width: 40,
-                height: 40,
-                color: color,
-              )
-            : Icon(
-                iconData,
-                size: 32,
-                color: color,
-              ),
       ),
     );
   }

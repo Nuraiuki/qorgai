@@ -7,6 +7,7 @@ import os
 import openai
 from datetime import datetime
 from functools import wraps
+import re
 
 # Load environment variables
 load_dotenv()
@@ -69,55 +70,92 @@ class Message(db.Model):
 def register():
     try:
         data = request.get_json()
-        name = data.get('name')
-        email = data.get('email')
+        
+        # Проверяем наличие всех необходимых полей
+        required_fields = ['name', 'email', 'password', 'confirm_password']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({"message": f"Поле {field} обязательно"}), 400
+
+        name = data.get('name').strip()
+        email = data.get('email').strip().lower()
         password = data.get('password')
         confirm = data.get('confirm_password')
 
-        if not all([name, email, password, confirm]):
-            return jsonify({"message": "Заполните все поля"}), 400
+        # Валидация email
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, email):
+            return jsonify({"message": "Некорректный формат email"}), 400
+
+        # Валидация пароля
+        if len(password) < 6:
+            return jsonify({"message": "Пароль должен быть не менее 6 символов"}), 400
+        if not any(c.isupper() for c in password):
+            return jsonify({"message": "Пароль должен содержать хотя бы одну заглавную букву"}), 400
+        if not any(c.isdigit() for c in password):
+            return jsonify({"message": "Пароль должен содержать хотя бы одну цифру"}), 400
 
         if password != confirm:
             return jsonify({"message": "Пароли не совпадают"}), 400
 
+        # Проверяем, существует ли пользователь
         if User.query.filter_by(email=email).first():
-            return jsonify({"message": "Пользователь уже существует"}), 409
+            return jsonify({"message": "Пользователь с таким email уже существует"}), 409
 
-        new_user = User(name=name, email=email, password=password)
+        # Создаем нового пользователя
+        new_user = User(
+            name=name,
+            email=email,
+            password=password,  # В реальном приложении пароль должен быть хэширован
+            is_admin=False,
+            created_at=datetime.utcnow()
+        )
+        
         db.session.add(new_user)
         db.session.commit()
 
         return jsonify({
             "message": "Регистрация прошла успешно",
             "user_id": new_user.id,
-            "name": new_user.name
+            "name": new_user.name,
+            "email": new_user.email
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": str(e)}), 500
+        app.logger.error(f"Error in register: {str(e)}")
+        return jsonify({"message": "Внутренняя ошибка сервера"}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
         data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
-
-        if not email or not password:
+        
+        # Проверяем наличие необходимых полей
+        if not data.get('email') or not data.get('password'):
             return jsonify({"message": "Email и пароль обязательны"}), 400
 
-        user = User.query.filter_by(email=email, password=password).first()
+        email = data.get('email').strip().lower()
+        password = data.get('password')
 
-        if user:
-            return jsonify({
-                "message": "Вход выполнен успешно",
-                "user_id": user.id,
-                "name": user.name
-            }), 200
-        else:
-            return jsonify({"message": "Неверный email или пароль"}), 401
+        # Ищем пользователя
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            return jsonify({"message": "Пользователь не найден"}), 404
+
+        if user.password != password:  # В реальном приложении нужно сравнивать хэши
+            return jsonify({"message": "Неверный пароль"}), 401
+
+        return jsonify({
+            "message": "Вход выполнен успешно",
+            "user_id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "is_admin": user.is_admin
+        }), 200
     except Exception as e:
-        return jsonify({"message": str(e)}), 500
+        app.logger.error(f"Error in login: {str(e)}")
+        return jsonify({"message": "Внутренняя ошибка сервера"}), 500
 
 # Chat completion endpoint
 @app.route('/api/chat', methods=['POST'])
