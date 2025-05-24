@@ -8,6 +8,7 @@ import openai
 from datetime import datetime
 from functools import wraps
 import re
+from sqlalchemy import text
 
 # Load environment variables
 load_dotenv()
@@ -69,8 +70,8 @@ class Message(db.Model):
 @app.route('/api/health', methods=['GET'])
 def health_check():
     try:
-        # Проверяем подключение к базе данных
-        db.session.execute('SELECT 1')
+        # Check database connection
+        db.session.execute(text('SELECT 1'))
         return jsonify({
             'status': 'healthy',
             'database': 'connected',

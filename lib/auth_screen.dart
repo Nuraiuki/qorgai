@@ -91,7 +91,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       final url = Uri.parse(
-        '${isLogin ? 'https://qorgai-backend.onrender.com/api/login' : 'https://qorgai-backend.onrender.com/api/register'}'
+        '${isLogin ? 'https://qorgai-backend-0odv.onrender.com/api/login' : 'https://qorgai-backend-0odv.onrender.com/api/register'}'
       );
 
       debugPrint('Отправка запроса на: $url'); // Логирование
