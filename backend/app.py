@@ -65,16 +65,37 @@ class Message(db.Model):
     content = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Health check endpoint
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    try:
+        # Проверяем подключение к базе данных
+        db.session.execute('SELECT 1')
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        app.logger.error(f"Health check failed: {str(e)}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
 # Регистрация
 @app.route('/api/register', methods=['POST'])
 def register():
     try:
         data = request.get_json()
+        app.logger.info(f"Register request received: {data}")  # Логирование входящего запроса
         
         # Проверяем наличие всех необходимых полей
         required_fields = ['name', 'email', 'password', 'confirm_password']
         for field in required_fields:
             if not data.get(field):
+                app.logger.warning(f"Missing required field: {field}")  # Логирование отсутствующего поля
                 return jsonify({"message": f"Поле {field} обязательно"}), 400
 
         name = data.get('name').strip()
@@ -85,21 +106,27 @@ def register():
         # Валидация email
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):
+            app.logger.warning(f"Invalid email format: {email}")  # Логирование неверного формата email
             return jsonify({"message": "Некорректный формат email"}), 400
 
         # Валидация пароля
         if len(password) < 6:
+            app.logger.warning("Password too short")  # Логирование короткого пароля
             return jsonify({"message": "Пароль должен быть не менее 6 символов"}), 400
         if not any(c.isupper() for c in password):
+            app.logger.warning("Password missing uppercase")  # Логирование отсутствия заглавной буквы
             return jsonify({"message": "Пароль должен содержать хотя бы одну заглавную букву"}), 400
         if not any(c.isdigit() for c in password):
+            app.logger.warning("Password missing digit")  # Логирование отсутствия цифры
             return jsonify({"message": "Пароль должен содержать хотя бы одну цифру"}), 400
 
         if password != confirm:
+            app.logger.warning("Passwords do not match")  # Логирование несовпадения паролей
             return jsonify({"message": "Пароли не совпадают"}), 400
 
         # Проверяем, существует ли пользователь
         if User.query.filter_by(email=email).first():
+            app.logger.warning(f"User already exists: {email}")  # Логирование существующего пользователя
             return jsonify({"message": "Пользователь с таким email уже существует"}), 409
 
         # Создаем нового пользователя
@@ -113,6 +140,7 @@ def register():
         
         db.session.add(new_user)
         db.session.commit()
+        app.logger.info(f"User registered successfully: {email}")  # Логирование успешной регистрации
 
         return jsonify({
             "message": "Регистрация прошла успешно",
@@ -122,16 +150,18 @@ def register():
         }), 201
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"Error in register: {str(e)}")
+        app.logger.error(f"Error in register: {str(e)}")  # Логирование ошибки
         return jsonify({"message": "Внутренняя ошибка сервера"}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
         data = request.get_json()
+        app.logger.info(f"Login request received: {data.get('email')}")  # Логирование входящего запроса
         
         # Проверяем наличие необходимых полей
         if not data.get('email') or not data.get('password'):
+            app.logger.warning("Missing email or password")  # Логирование отсутствующих полей
             return jsonify({"message": "Email и пароль обязательны"}), 400
 
         email = data.get('email').strip().lower()
@@ -141,11 +171,14 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if not user:
+            app.logger.warning(f"User not found: {email}")  # Логирование отсутствующего пользователя
             return jsonify({"message": "Пользователь не найден"}), 404
 
         if user.password != password:  # В реальном приложении нужно сравнивать хэши
+            app.logger.warning(f"Invalid password for user: {email}")  # Логирование неверного пароля
             return jsonify({"message": "Неверный пароль"}), 401
 
+        app.logger.info(f"User logged in successfully: {email}")  # Логирование успешного входа
         return jsonify({
             "message": "Вход выполнен успешно",
             "user_id": user.id,
@@ -154,7 +187,7 @@ def login():
             "is_admin": user.is_admin
         }), 200
     except Exception as e:
-        app.logger.error(f"Error in login: {str(e)}")
+        app.logger.error(f"Error in login: {str(e)}")  # Логирование ошибки
         return jsonify({"message": "Внутренняя ошибка сервера"}), 500
 
 # Chat completion endpoint
