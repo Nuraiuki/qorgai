@@ -1,18 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
+import 'package:shared_preferences.dart';
 
 class ChatService {
-  static const String baseUrl = 'https://qorgai-backend-0odv.onrender.com';
+  static const String _baseUrl = 'https://qorgai-backend-0odv.onrender.com/api';
+  static const String _chatEndpoint = '/chat';
 
-  Future<String> sendMessage(String message, {required int? userId}) async {
+  Future<String> sendMessage(String message, int userId) async {
     try {
-      debugPrint('Sending message to: $baseUrl/api/chat');
-      debugPrint('Message: $message');
-      debugPrint('User ID: $userId');
+      print('Sending message to backend...');
+      print('URL: $_baseUrl$_chatEndpoint');
+      print('Message: $message');
+      print('User ID: $userId');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/chat'),
+        Uri.parse('$_baseUrl$_chatEndpoint'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -24,18 +26,18 @@ class ChatService {
         }),
       );
 
-      debugPrint('Response status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['response'] ?? 'Извините, произошла ошибка';
+        return data['response'];
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['error'] ?? 'Ошибка при отправке сообщения');
+        throw Exception(errorData['message'] ?? 'Ошибка при отправке сообщения');
       }
     } catch (e) {
-      debugPrint('Error in sendMessage: $e');
+      print('Error in sendMessage: $e');
       throw Exception('Ошибка при отправке сообщения: $e');
     }
   }
