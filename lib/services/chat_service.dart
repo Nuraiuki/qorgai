@@ -22,6 +22,11 @@ class ChatService {
         body: jsonEncode({
           'message': message,
         }),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Превышено время ожидания ответа от сервера');
+        },
       );
 
       print('Response status code: ${response.statusCode}');
@@ -32,11 +37,17 @@ class ChatService {
         return data['response'];
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Ошибка при отправке сообщения');
+        throw Exception(errorData['error'] ?? errorData['message'] ?? 'Ошибка при отправке сообщения');
       }
     } catch (e) {
       print('Error in sendMessage: $e');
-      throw Exception('Ошибка при отправке сообщения: $e');
+      if (e is TimeoutException) {
+        throw Exception('Превышено время ожидания ответа от сервера. Пожалуйста, попробуйте позже.');
+      } else if (e is FormatException) {
+        throw Exception('Ошибка при обработке ответа сервера. Пожалуйста, попробуйте позже.');
+      } else {
+        throw Exception('Ошибка при отправке сообщения: $e');
+      }
     }
   }
 } 

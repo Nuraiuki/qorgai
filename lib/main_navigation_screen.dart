@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'favorites_screen.dart';
+import 'screens/tomiris_home_screen.dart';
 import 'screens/article_screen.dart';
 import 'screens/podcast_screen.dart';
 import 'screens/profile_screen.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'services/chat_service.dart';
+import '../services/chat_service.dart';
 
 class TomirisHomeScreen extends StatefulWidget {
   final int? userId;
@@ -32,7 +32,7 @@ class _TomirisHomeScreenState extends State<TomirisHomeScreen> {
     });
 
     try {
-      final response = await _chatService.sendMessage(text, userId: widget.userId);
+      final response = await _chatService.sendMessage(text);
       
       setState(() {
         _messages.add({'role': 'bot', 'text': response});
@@ -58,14 +58,14 @@ class _TomirisHomeScreenState extends State<TomirisHomeScreen> {
         backgroundColor: bgColor,
         elevation: 0,
         centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.brown),
+        iconTheme: const IconThemeData(color: Colors.brown),
       ),
       body: SafeArea(
         child: Column(
           children: [
             if (_introVisible) ...[
-              SizedBox(height: 20),
-              Padding(
+              const SizedBox(height: 20),
+              const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'С чем я могу помочь тебе сегодня?',
@@ -77,10 +77,10 @@ class _TomirisHomeScreenState extends State<TomirisHomeScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Image.asset('assets/icons/Vector1.png', height: 200),
-              SizedBox(height: 16),
-              Text(
+              const SizedBox(height: 16),
+              const Text(
                 'Томирис',
                 style: TextStyle(
                   fontSize: 24,
@@ -92,87 +92,89 @@ class _TomirisHomeScreenState extends State<TomirisHomeScreen> {
                 'твой цифровой юрист и защитница',
                 style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
             ],
             Expanded(
               child: ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                padding: const EdgeInsets.all(16),
+                itemCount: _messages.length,
                 itemBuilder: (context, index) {
-                  if (_isLoading && index == _messages.length) {
-                    return Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 6),
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Text('Томирис печатает...'),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  final msg = _messages[index];
-                  final isUser = msg['role'] == 'user';
+                  final message = _messages[index];
+                  final isUser = message['role'] == 'user';
+                  
                   return Align(
                     alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
-                      margin: EdgeInsets.symmetric(vertical: 6),
-                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: isUser ? Colors.brown[100] : Colors.green[100],
+                        color: isUser ? const Color(0xFF6D9B6F) : Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Text(
-                        msg['text'] ?? '',
-                        style: TextStyle(color: Colors.black87, fontSize: 14),
+                        message['text']!,
+                        style: TextStyle(
+                          color: isUser ? Colors.white : Colors.black87,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   );
                 },
               ),
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(),
+              ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: 'Напишите свой запрос...',
+                        hintText: 'Введите сообщение...',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: borderColor),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: borderColor),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
-                      onSubmitted: (_) => _sendMessage(),
+                      maxLines: null,
                     ),
                   ),
-                  SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: _isLoading ? null : _sendMessage,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundColor: _isLoading ? Colors.grey : borderColor,
-                      child: Icon(Icons.send, color: Colors.white),
-                    ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _sendMessage,
+                    icon: const Icon(Icons.send, color: Color(0xFF6D9B6F)),
                   ),
                 ],
               ),
@@ -182,4 +184,4 @@ class _TomirisHomeScreenState extends State<TomirisHomeScreen> {
       ),
     );
   }
-}
+} 
