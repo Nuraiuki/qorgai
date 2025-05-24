@@ -81,8 +81,7 @@ migrate = Migrate(app, db)
 openai_api_key = os.getenv('OPENAI_API_KEY')
 if openai_api_key:
     try:
-        openai.api_key = openai_api_key
-        client = openai
+        client = openai.OpenAI(api_key=openai_api_key)
     except Exception as e:
         logger.error(f"Failed to initialize OpenAI client: {str(e)}")
         client = None
