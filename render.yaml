@@ -3,9 +3,10 @@ services:
     name: qorgai-backend
     env: python
     buildCommand: |
-      chmod +x backend/build.sh
-      ./backend/build.sh
-    startCommand: gunicorn backend.app:app
+      cd backend
+      chmod +x build.sh
+      ./build.sh
+    startCommand: cd backend && gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -20,7 +21,7 @@ services:
       - key: FLASK_ENV
         value: production
       - key: FLASK_APP
-        value: backend.app
+        value: app.py
 
   - type: web
     name: qorgai-frontend
