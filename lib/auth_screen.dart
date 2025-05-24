@@ -94,7 +94,8 @@ class _AuthScreenState extends State<AuthScreen> {
         '${isLogin ? 'https://qorgai-backend.onrender.com/api/login' : 'https://qorgai-backend.onrender.com/api/register'}'
       );
 
-      print('Отправка запроса на: $url'); // Логирование
+      debugPrint('Отправка запроса на: $url'); // Логирование
+      debugPrint('Метод: ${isLogin ? 'LOGIN' : 'REGISTER'}'); // Логирование
 
       final requestBody = {
         'email': emailController.text.trim(),
@@ -105,7 +106,7 @@ class _AuthScreenState extends State<AuthScreen> {
         },
       };
 
-      print('Тело запроса: $requestBody'); // Логирование
+      debugPrint('Тело запроса: $requestBody'); // Логирование
 
       final response = await http.post(
         url,
@@ -116,12 +117,14 @@ class _AuthScreenState extends State<AuthScreen> {
         body: jsonEncode(requestBody),
       );
 
-      print('Статус ответа: ${response.statusCode}'); // Логирование
-      print('Тело ответа: ${response.body}'); // Логирование
+      debugPrint('Статус ответа: ${response.statusCode}'); // Логирование
+      debugPrint('Тело ответа: ${response.body}'); // Логирование
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('Успешный ответ: $data'); // Логирование
+
         // Сохраняем данные пользователя
         final userData = {
           'id': data['user_id'],
@@ -130,11 +133,14 @@ class _AuthScreenState extends State<AuthScreen> {
           'is_admin': data['is_admin'] ?? false,
         };
 
+        debugPrint('Сохранение данных пользователя: $userData'); // Логирование
+
         final storage = await SharedPreferences.getInstance();
         await storage.setString('user', jsonEncode(userData));
 
         if (mounted) {
           if (!isLogin) {
+            debugPrint('Показ диалога соглашения'); // Логирование
             // Показываем диалог с соглашением только после регистрации
             await showDialog(
               context: context,
@@ -167,6 +173,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   actions: [
                     TextButton(
                       onPressed: () {
+                        debugPrint('Пользователь согласился с условиями'); // Логирование
                         Navigator.of(context).pop();
                         Navigator.pushReplacement(
                           context,
@@ -180,6 +187,7 @@ class _AuthScreenState extends State<AuthScreen> {
               },
             );
           } else {
+            debugPrint('Успешный вход, переход на главный экран'); // Логирование
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(data['message']),
@@ -193,6 +201,7 @@ class _AuthScreenState extends State<AuthScreen> {
           }
         }
       } else {
+        debugPrint('Ошибка: ${data['message']}'); // Логирование
         setState(() {
           errorMessage = data['message'] ?? 'Произошла ошибка';
         });
@@ -204,7 +213,7 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       }
     } catch (e) {
-      print('Ошибка при отправке запроса: $e'); // Логирование
+      debugPrint('Ошибка при отправке запроса: $e'); // Логирование
       setState(() {
         errorMessage = 'Ошибка соединения с сервером';
       });
