@@ -1,19 +1,22 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class ChatService {
-  static const String baseUrl = 'https://qorgai-backend.onrender.com';
+  static const String baseUrl = 'https://qorgai-backend-0odv.onrender.com';
 
   Future<String> sendMessage(String message, int userId) async {
     try {
-      print('Отправка сообщения на: $baseUrl/api/chat'); // Логирование
-      print('Тело запроса: {"message": "$message", "user_id": $userId}'); // Логирование
+      debugPrint('Sending message to: $baseUrl/api/chat');
+      debugPrint('Message: $message');
+      debugPrint('User ID: $userId');
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/chat'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Origin': 'https://qorgai-frontend-0odv.onrender.com',
         },
         body: jsonEncode({
           'message': message,
@@ -21,19 +24,19 @@ class ChatService {
         }),
       );
 
-      print('Статус ответа: ${response.statusCode}'); // Логирование
-      print('Тело ответа: ${response.body}'); // Логирование
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['response'] ?? 'Ошибка: пустой ответ от сервера';
+        return data['response'] ?? 'Извините, произошла ошибка';
       } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['message'] ?? 'Ошибка при отправке сообщения');
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Ошибка при отправке сообщения');
       }
     } catch (e) {
-      print('Ошибка в sendMessage: $e'); // Логирование
-      throw Exception('Ошибка соединения с сервером: $e');
+      debugPrint('Error in sendMessage: $e');
+      throw Exception('Ошибка при отправке сообщения: $e');
     }
   }
 } 

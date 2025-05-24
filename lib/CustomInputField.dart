@@ -6,6 +6,7 @@ class CustomInputField extends StatelessWidget {
   final bool obscureText;
   final TextEditingController? controller;
   final TextInputType keyboardType;
+  final String? Function(String?)? validator;
 
   const CustomInputField({
     super.key,
@@ -13,6 +14,7 @@ class CustomInputField extends StatelessWidget {
     this.obscureText = false,
     this.controller,
     this.keyboardType = TextInputType.text,
+    this.validator,
   });
 
   @override
@@ -31,10 +33,11 @@ class CustomInputField extends StatelessWidget {
           ),
         ],
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        validator: validator,
         cursorColor: const Color(0xFF6D9B6F),
         style: GoogleFonts.inter(
           fontSize: 17,
@@ -59,6 +62,14 @@ class CustomInputField extends StatelessWidget {
               color: Color(0xFF6D9B6F), 
               width: 1.8,
             ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red),
           ),
         ),
       ),

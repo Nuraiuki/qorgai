@@ -5,6 +5,7 @@ import 'theme/app_colors.dart';
 // import 'home_screen.dart'; 
 import 'main_navigation_screen.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'CustomInputField.dart';
 
 
 class AuthScreen extends StatefulWidget {
@@ -16,7 +17,6 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
-  bool obscurePassword = true;
   bool isLoading = false;
   String? errorMessage;
 
@@ -150,49 +150,39 @@ class _AuthScreenState extends State<AuthScreen> {
             if (!isLogin) {
               debugPrint('Показ диалога соглашения'); // Логирование
               // Показываем диалог с соглашением только после регистрации
-              await showDialog(
+              showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Соглашение'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Данное приложение носит исключительно информационный характер и не является частью какого-либо движения или организации.',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Нажимая кнопку «Согласен», пользователь подтверждает, что осознаёт ответственность за распространение информации и принимает условия, согласно которым:',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          SizedBox(height: 8),
-                          Text('– он не будет разглашать данные о третьих лицах без их согласия,'),
-                          Text('– обязуется соблюдать положения Закона РК «О персональных данных»,'),
-                          Text('– использует полученную информацию исключительно в личных целях,'),
-                          Text('– и принимает условия использования контента в рамках закона.'),
-                        ],
-                      ),
+                builder: (context) => AlertDialog(
+                  title: const Text('Соглашение'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Пользователь:'),
+                        SizedBox(height: 8),
+                        Text('– согласен с условиями использования сервиса;'),
+                        Text('– согласен с политикой конфиденциальности;'),
+                        Text('– согласен с условиями обработки персональных данных;'),
+                        Text('– и принимает условия использования контента в рамках закона.'),
+                      ],
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          debugPrint('Пользователь согласился с условиями'); // Логирование
-                          Navigator.of(context).pop();
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-                          );
-                        },
-                        child: const Text('Согласен'),
-                      ),
-                    ],
-                  );
-                },
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        debugPrint('Пользователь согласился с условиями'); // Логирование
+                        Navigator.of(context).pop();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                        );
+                      },
+                      child: const Text('Согласен'),
+                    ),
+                  ],
+                ),
               );
             } else {
               debugPrint('Успешный вход, переход на главный экран'); // Логирование
@@ -312,8 +302,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         if (!isLogin)
                           Column(
                             children: [
-                              _textField(
-                                "никнейм",
+                              CustomInputField(
+                                hintText: "никнейм",
                                 controller: nameController,
                                 validator: validateName,
                               ),
@@ -321,24 +311,26 @@ class _AuthScreenState extends State<AuthScreen> {
                             ],
                           ),
 
-                        _textField(
-                          "qorgai@email.com",
+                        CustomInputField(
+                          hintText: "qorgai@email.com",
                           controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
                           validator: validateEmail,
                         ),
                         const SizedBox(height: 16),
-                        _textField(
-                          "пароль",
+                        CustomInputField(
+                          hintText: "пароль",
                           controller: passwordController,
-                          obscure: true,
+                          obscureText: true,
                           validator: validatePassword,
                         ),
+
                         if (!isLogin) ...[
                           const SizedBox(height: 16),
-                          _textField(
-                            "подтверждение пароля",
+                          CustomInputField(
+                            hintText: "подтверждение пароля",
                             controller: confirmPasswordController,
-                            obscure: true,
+                            obscureText: true,
                             validator: (value) {
                               if (value != passwordController.text) {
                                 return 'Пароли не совпадают';
@@ -480,41 +472,6 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _textField(
-    String hint, {
-    required TextEditingController controller,
-    bool obscure = false,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      validator: validator,
-      decoration: InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: const Color(0xFFFDF8F9),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFDBA7A7)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFDBA7A7)),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-      ),
     );
   }
 }
